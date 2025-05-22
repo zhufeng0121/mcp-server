@@ -1,20 +1,95 @@
 import argparse
 import logging
 import os
-from time import struct_time
 
 from typing import Dict, Optional, Final, Any
 from mcp.server import FastMCP
-from volcengine.example.viking_knowledgebase.example import viking_knowledgebase_service
 from volcengine.viking_knowledgebase import VikingKnowledgeBaseService
+from mcp_server_knowledgebase.config import config
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-# 这个port的环境变量确认一下
-mcp = FastMCP("Knowledgebase MCP Server", port = int(os.getenv("MCP_KNOWLEDGE_SERVER_PORT", 8080)))
+# Global variables
+knowledgebase_service = None
+
+# Create MCP server
+mcp = FastMCP("Knowledgebase MCP Server", port=int(os.getenv("PORT", "8000")))
+
+@mcp.tool()
+def add_doc(
+        collection_name: str,
+        project: str,
+        url: str,
+):
+    """
+    add a document to your collection.
+    This tool allows you to add a document to your collection by url of doc.
+
+    Args:
+         project: the project of the knowledge base collection.
+         collection_name: the name of the knowledge base collection to add doc.
+
+    """
+
+    try:
+        if not collection_name:
+            raise ValueError("Collection name cannot be empty.")
+        elif not url:
+            raise ValueError("URL cannot be empty.")
+
+        # use url to add doc
+        collection = knowledgebase_service.get_collection(collection_name, project)
+
+        collection.add_doc(project=project, add_type="url", doc_id="", doc_name="", doc_type="", url=url)
+
+    except Exception as e:
+        logger.error(f"Error in add_doc: {str(e)}")
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def get_doc(
+        doc_id: str,
+        project: str,
+        collection_name: str,
+) -> Dict:
+    """
+    Get information about a document from your collection.
+    This tool allows you to get information about a document from your collection by doc_id and collection_name.
+
+    Args:
+         project: the project of the knowledge base collection.
+         collection_name: the name of the knowledge base collection to get doc info for.
+         doc_id: the id of the doc to get info.
+
+    Returns:
+        the status of the doc.
+        process_status: the status of the doc.
+        process_status = 0: the doc is not processed finished.
+        process_status = 1: the doc is processed failed.
+        process_status = 2: the doc is wait for processing in line.
+        process_status = 3: the doc is wait for processing in line.
+        process_status = 5: the doc is deleting.
+        process_status = 6: the doc is processing.
+    """
+
+    try:
+        if not collection_name:
+            raise ValueError("Collection name cannot be empty.")
+        elif not doc_id:
+            raise ValueError("Doc ID cannot be empty.")
+
+        collection = knowledgebase_service.get_collection(collection_name, project)
+
+        doc_info = collection.get_doc(project=project, doc_id=doc_id)
+        return doc_info.get("status").get("process_status")
+    except Exception as e:
+        logger.error(f"Error in get_doc: {str(e)}")
+        return {"error": str(e)}
+
 
 @mcp.tool()
 def list_collections(
@@ -25,11 +100,11 @@ def list_collections(
     This tool allows you to list all collections in the Viking Knowledgebase service.
 
     Args:
-         project: the project of the knowledge base collection.
+         project: the project user want to list collections for.
     """
 
     try:
-        result = viking_knowledgebase_service.list_collections(project=project)
+        result = knowledgebase_service.list_collections(project=project)
         return result.get("collection_list")
     except Exception as e:
         logger.error(f"Error in list_collections: {str(e)}")
@@ -58,7 +133,7 @@ def search_knowledge(
     try:
         if not collection_name:
             raise ValueError("Collection name cannot be empty.")
-        result = viking_knowledgebase_service.search_knowledge(
+        result = knowledgebase_service.search_knowledge(
             collection_name=collection_name,
             query=query,
             limit=limit,
@@ -81,12 +156,29 @@ def main():
         default="stdio",
         help="Transport protocol to use (sse or stdio)",
     )
-
     args = parser.parse_args()
-
     logger.info(f"Starting Knowledgebase MCP Server with {args.transport} transport")
 
     try:
+        global knowledgebase_service
+
+        knowledgebase_service = VikingKnowledgeBaseService(
+            host=config.host,
+            scheme="https",
+            connection_timeout=30,
+            socket_timeout=30,
+        )
+        knowledgebase_service.set_ak(config.ak)
+        knowledgebase_service.set_sk(config.sk)
+
+        logger.info(
+            f"Initialized Viking Knowledge Base service for host: {config.host}, collection: {config.collection_name}"
+        )
+
+        # Run the MCP server
+        logger.info(
+            f"Starting Viking Knowledge Base MCP Server with {args.transport} transport"
+        )
 
         mcp.run(transport=args.transport)
     except Exception as e:
