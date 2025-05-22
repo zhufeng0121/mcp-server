@@ -7,7 +7,6 @@ from typing import Dict, Optional, Final, Any
 from mcp.server import FastMCP
 from volcengine.viking_knowledgebase import VikingKnowledgeBaseService
 from server.mcp_server_knowledgebase.src.mcp_server_knowledgebase.config import config
-from server.mcp_server_knowledgebase.src.mcp_server_knowledgebase.auth import prepare_request
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -19,59 +18,6 @@ knowledgebase_service: Optional[VikingKnowledgeBaseService] = None
 
 # Create MCP server
 mcp = FastMCP("Knowledgebase MCP Server", port=int(os.getenv("PORT", "8000")))
-
-@mcp.tool()
-def add_doc(
-        collection_name: str,
-        project: str,
-        tos_path: str,
-):
-    """
-    add a document to your collection.
-    This tool allows you to add a document to your collection by url of doc.
-
-    Args:
-         project: the project of the knowledge base collection.
-         collection_name: the name of the knowledge base collection to add doc.
-         tos_path: the tos path of the document to add.
-
-    """
-
-    method = "POST"
-    path = "/api/knowledge/doc/add"
-
-    request_params = {
-        "collection_name": collection_name,
-        "project": project,
-        "add_type": "tos",
-    }
-
-    add_doc_req = prepare_request(method="POST", path="/api/knowledge/doc/add", ak=config.ak, sk=config.sk, data=request_params)
-    add_doc_resp = requests.request(
-        method=add_doc_req.method,
-        url="https://{}{}".format(config.host, add_doc_req.path),
-        headers=add_doc_req.headers,
-        data=add_doc_req.body,
-    )
-
-    # return add_doc_resp.json()
-
-
-    try:
-        if not collection_name:
-            raise ValueError("Collection name cannot be empty.")
-        elif not tos_path:
-            raise ValueError("URL cannot be empty.")
-
-        # use url to add doc
-        collection = knowledgebase_service.get_collection(collection_name, project)
-
-        collection.add_doc(project=project, add_type="tos", tos_path=tos_path)
-        return {"status": "success"}
-
-    except Exception as e:
-        logger.error(f"Error in add_doc: {str(e)}")
-        return {"error": str(e)}
 
 
 @mcp.tool()
