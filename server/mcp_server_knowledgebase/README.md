@@ -1,6 +1,7 @@
 # Viking Knowledge Base MCP Server
 
-This MCP server provides a tool to interact with the VolcEngine Viking Knowledge Base Service, allowing you to search and retrieve knowledge from your collections.
+This MCP server provides a tool to interact with the VolcEngine Viking Knowledge Base Service, allowing you to search and retrieve knowledge from your collections, meanwhile,
+allowing you to add doc to your collections and get doc processing info by doc_id.
 
 ## Features
 
@@ -31,8 +32,8 @@ uv pip install -e .
 
 The server requires the following environment variables:
 
-- `VOLC_ACCESSKEY`: Your VolcEngine access key
-- `VOLC_SECRETKEY`: Your VolcEngine secret key
+- `VOLCENGINE_ACCESS_KEY`: Your VolcEngine access key
+- `VOLCENGINE_SECRET_KEY`: Your VolcEngine secret key
 
 Optional environment variables:
 
@@ -90,8 +91,8 @@ To add this server to your MCP configuration, add the following to your MCP sett
           "mcp-server-knowledgebase",
         ],
       "env": {
-        "VOLC_ACCESSKEY": "your-access-key",
-        "VOLC_SECRETKEY": "your-secret-key",
+        "VOLCENGINE_ACCESS_KEY": "your-access-key",
+        "VOLCENGINE_SECRET_KEY": "your-secret-key",
         "VIKING_KB_COLLECTION_NAME": "your-collection-name"
       },
     }

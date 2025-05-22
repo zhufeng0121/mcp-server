@@ -20,8 +20,8 @@ class KnowledgeBaseConfig:
 def load_config() -> KnowledgeBaseConfig:
     """Load configuration from environment variables."""
     required_vars = [
-        "VOLC_ACCESSKEY",
-        "VOLC_SECRETKEY",
+        "VOLCENGINE_ACCESS_KEY",
+        "VOLCENGINE_SECRET_KEY",
     ]
 
     # Check if all required environment variables are set
@@ -33,8 +33,8 @@ def load_config() -> KnowledgeBaseConfig:
 
     # Load configuration from environment variables
     return KnowledgeBaseConfig(
-        ak=os.environ["VOLC_ACCESSKEY"],
-        sk=os.environ["VOLC_SECRETKEY"],
+        ak=os.environ["VOLCENGINE_ACCESS_KEY"],
+        sk=os.environ["VOLCENGINE_SECRET_KEY"],
         host=os.getenv("VIKING_KB_HOST", "api-knowledgebase.mlp.cn-beijing.volces.com"),
         collection_name=os.getenv("VIKING_KB_COLLECTION_NAME", None),
         project=os.getenv("VIKING_KB_PROJECT", None),
